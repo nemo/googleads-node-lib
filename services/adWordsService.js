@@ -110,6 +110,38 @@ function AdWordsService(options) {
     });
   };
 
+  self.performMethod = function(method, clientCustomerId, query, done) {
+    if (clientCustomerId) {
+      self.soapHeader.RequestHeader.clientCustomerId = clientCustomerId;
+    }
+
+    async.waterfall([
+      // get client
+      self.getClient,
+      // Request AdWords data...
+      function(client, cb) {
+        if (self.methods.indexOf(method) == -1) {
+          return done(
+            new Error(method + ' method does not exist on ' + self.name)
+          );
+        }
+
+        self.client.addSoapHeader(
+          self.soapHeader, self.name, self.namespace, self.xmlns
+        );
+
+        self.client.setSecurity(
+          new soap.BearerSecurity(self.credentials.access_token)
+        );
+
+        self.client[method]({query: query}, cb);
+      }
+    ],
+    function(err, response) {
+      return done(err, self.parseQueryResponse(response));
+    });
+  };
+
   self.mutate = function(options, done) {
     _.defaults(options, {
       parseMethod: self.parseMutateResponse
@@ -239,10 +271,13 @@ function AdWordsService(options) {
     RequestHeader: {
       developerToken: self.options.ADWORDS_DEVELOPER_TOKEN,
       userAgent: self.options.ADWORDS_USER_AGENT,
-      clientCustomerId: self.options.ADWORDS_CLIENT_CUSTOMER_ID,
       validateOnly: self.validateOnly
     }
   };
+
+  if (self.options.ADWORDS_CLIENT_CUSTOMER_ID) {
+    self.soapHeader.RequestHeader.clientCustomerId = self.options.ADWORDS_CLIENT_CUSTOMER_ID;
+  }
 }
 
 AdWordsService.prototype = _.create(AdWordsObject.prototype, {
