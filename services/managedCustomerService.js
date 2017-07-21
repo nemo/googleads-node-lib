@@ -107,7 +107,6 @@ function Service(options) {
   self.selectable = [
     'AccountLabels',
     'CanManageClients',
-    'CompanyName',
     'CurrencyCode',
     'CustomerId',
     'DateTimeZone',
